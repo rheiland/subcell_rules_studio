@@ -324,9 +324,18 @@ std::tuple<std::string, std::string, std::string, double> parse_initial_conditio
 	
 	// get csv filename
 	std::string folder = xml_get_string_value( node, "folder" ); 
+	std::cout << "----------- folder = " << folder  << std::endl;
 	std::string filename = xml_get_string_value( node, "filename" ); 
+	std::cout << "----------- filename = " << filename  << std::endl;
 	double subcell_radius = xml_get_double_value( node, "subcell_radius_microns" ); 
+
 	std::string csv_filename = folder + "/" + filename; 
+	std::cout << "----------- 0)csv_filename = " << csv_filename  << std::endl;
+	csv_filename = folder; 
+	std::cout << "----------- 1)csv_filename = " << csv_filename  << std::endl;
+	csv_filename.append("/"); 
+	csv_filename.append(filename);
+	std::cout << "----------- 2)csv_filename = " << csv_filename  << std::endl;
 
 	// check file type
 	std::string filetype = node.attribute("type").value(); 
@@ -358,6 +367,8 @@ std::tuple<std::string, std::string, std::string, double> parse_initial_conditio
 	// get cell definition names
 	std::string owner_cd_name = xml_get_string_value( node, "owner_cell_definition_name" ); 
 	std::string member_cd_name = xml_get_string_value( node, "member_cell_definition_name" ); 
+
+	std::cout << "----------- csv_filename(2) = " << csv_filename  << std::endl;
 
 	return {csv_filename, owner_cd_name, member_cd_name, subcell_radius};
 }

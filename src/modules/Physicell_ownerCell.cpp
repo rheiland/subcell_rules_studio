@@ -130,7 +130,8 @@ void initialize_subcell_definitions_from_pugixml( pugi::xml_node root )
     owner_cell_definition_name = std::get<1>(init_conditions_data);
     member_cell_definition_name = std::get<2>(init_conditions_data);
     double subcell_radius = std::get<3>(init_conditions_data);
-    subcell_volume = 4 / 3 * 3.14 * pow(subcell_radius, 3.0);
+    // subcell_volume = 4 / 3 * 3.14 * pow(subcell_radius, 3.0);  
+    subcell_volume = 4. / 3 * 3.14 * pow(subcell_radius, 3.0); // rwh: no integer division 
 	std::cout << "Creating cell definitions from CSV file " << std::get<0>(init_conditions_data) << " ... " << std::endl; 
 
 	std::ifstream file( std::get<0>(init_conditions_data), std::ios::in );
