@@ -161,7 +161,12 @@
 	<cell_definitions>
 		<cell_definition name="substrate" ID="0">
 			<phenotype>
-				<cycle code="8" name="Quiescent model"></cycle>
+			<!-- <cycle code="8" name="Quiescent model"></cycle> -->		
+				<cycle code="5" name="live">  
+					<phase_transition_rates units="1/min"> 
+						<rate start_index="0" end_index="0" fixed_duration="false">0.0</rate>
+					</phase_transition_rates>
+				</cycle>  
 
           <death>
             <model code="100" name="apoptosis">
@@ -255,7 +260,14 @@
 
 		<cell_definition name="subcell" ID="1">
 			<phenotype>
-				<cycle code="7" name="Cycling-Quiescent model"></cycle>					
+
+				<cycle code="7" name="cycling quiescent">
+					<phase_transition_rates units="1/min">
+						<rate start_index="0" end_index="1" fixed_duration="false">0.00363108</rate>
+						<rate start_index="1" end_index="0" fixed_duration="true">0.00107527</rate>
+					</phase_transition_rates>
+                </cycle>
+
           <death>
             <model code="100" name="apoptosis">
               <death_rate units="1/min">0</death_rate>

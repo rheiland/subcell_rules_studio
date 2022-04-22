@@ -57,7 +57,7 @@ class PhysiCellXMLCreator(QWidget):
             self.nanohub_flag = "home/nanohub" in os.environ['HOME']
 
 
-        self.title_prefix = "PhysiCell Studio: "
+        self.title_prefix = "Subcell Rules: "
         # self.title_prefix = "PhysiCell Studio"
         self.setWindowTitle(self.title_prefix)
 

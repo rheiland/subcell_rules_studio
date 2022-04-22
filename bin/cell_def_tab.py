@@ -3601,9 +3601,6 @@ class CellDef(QWidget):
         # # elif 'separated' in self.param_d[cdname]['cycle']:
         # #     self.cycle_dropdown.setCurrentIndex(4)
 
-        if 'cycle_duration_flag' not in self.param_d[cdname].keys():
-            return
-
         if self.param_d[cdname]['cycle_duration_flag']:
             self.cycle_rb2.setChecked(True)
         else:
@@ -4099,10 +4096,15 @@ class CellDef(QWidget):
                                         self.param_d[cell_def_name]['cycle_quiescent_trate01_fixed'] = True
 
                         elif (rate.attrib['start_index'] == "1"):
-                            if (rate.attrib['end_index'] == "0"):  # must be 'basic Ki67'
-                                self.param_d[cell_def_name]['cycle_Ki67_trate10'] = sval
-                                if (rate.attrib['fixed_duration'].lower() == "true"): 
-                                    self.param_d[cell_def_name]['cycle_Ki67_trate10_fixed'] = True
+                            if (rate.attrib['end_index'] == "0"):
+                                if cycle_code == 1: # 'basic Ki67'
+                                    self.param_d[cell_def_name]['cycle_Ki67_trate10'] = sval
+                                    if (rate.attrib['fixed_duration'].lower() == "true"): 
+                                        self.param_d[cell_def_name]['cycle_Ki67_trate10_fixed'] = True
+                                elif cycle_code == 7: # 'cycling quiescent'
+                                    self.param_d[cell_def_name]['cycle_quiescent_trate10'] = sval
+                                    if (rate.attrib['fixed_duration'].lower() == "true"): 
+                                        self.param_d[cell_def_name]['cycle_quiescent_trate10_fixed'] = True
 
                             elif (rate.attrib['end_index'] == "2"):
                                 if cycle_code == 0: #'advanced Ki67'
