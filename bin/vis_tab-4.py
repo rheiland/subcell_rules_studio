@@ -114,99 +114,6 @@ class Vis(QWidget):
         # self.cs = self.ax0.contourf(X, Y, Z, cmap=self.cmap)
         # self.cbar = self.figure.colorbar(self.cs, ax=self.ax)
 
-        # rendering objects
-        self.points = vtkPoints()
-        self.cellID = vtkFloatArray()
-        self.cellVolume = vtkFloatArray()
-        self.polydata = vtkPolyData()
-        self.colors = vtkUnsignedCharArray()
-        self.sphereSource = vtkSphereSource()
-        nres = 20
-        self.sphereSource.SetPhiResolution(nres)
-        self.sphereSource.SetThetaResolution(nres)
-        # self.sphereSource.SetRadius(0.02)
-        # self.sphereSource.SetRadius(2.6)  # rwh ??
-        self.sphereSource.SetRadius(8.412)  # rwh ??
-        self.glyph = vtkGlyph3D()
-        self.cells_mapper = vtkPolyDataMapper()
-        self.cells_mapper.SetInputConnection(self.glyph.GetOutputPort())
-
-        self.cells_actor = vtkActor()
-        self.cells_actor.SetMapper(self.cells_mapper)
-
-        xmax = 400
-        ymax = 400
-        zmax = 150
-        self.cyl = vtkCylinderSource()
-        self.cyl.CappingOff()
-        self.cyl.SetCenter(0.0, 0.0, 300.0)
-        self.cyl.SetRadius(xmax)
-        self.cyl.SetHeight(800.0)
-        self.cyl.SetResolution(50)
-        self.cyl.Update()
-
-        # define x-z plane
-        self.plane_source = vtkPlaneSource()
-        xorig = -100
-        zBM = -20
-        self.plane_source.SetOrigin(xorig,0,zBM)
-        plength = 300.0
-        self.plane_source.SetPoint1(xorig+plength,0,zBM)
-        self.plane_source.SetPoint2(xorig,plength,zBM)
-        self.plane_source.SetResolution(20,20)
-        self.plane_source.Update()
-        self.plane_mapper = vtkDataSetMapper()
-        self.plane_mapper.SetInputData(self.plane_source.GetOutput())
-        self.plane_actor = vtkActor()
-        self.plane_actor.SetMapper(self.plane_mapper)
-        self.plane_actor.GetProperty().SetColor(1.0, 0.5, 0.5)
-        self.plane_actor.GetProperty().SetDiffuse(0.5)
-        self.plane_actor.GetProperty().SetAmbient(0.4)
-        self.plane_actor.GetProperty().SetRepresentationToWireframe()
-
-        # clip the cylinder
-        # https://kitware.github.io/vtk-examples/site/Python/Meshes/CapClip/
-        self.plane = vtkPlane()
-        print("cyl center= ",self.cyl.GetOutput().GetCenter())
-        self.plane.SetOrigin(self.cyl.GetOutput().GetCenter())
-        self.plane.SetOrigin(0,0,300)
-        self.plane.SetNormal(0.0, 0.0, -1.0)
-
-        self.clipper = vtkClipPolyData()
-        self.clipper.SetInputData(self.cyl.GetOutput())
-        self.clipper.SetClipFunction(self.plane)
-        self.clipper.SetValue(100)
-        self.clipper.Update()
-
-        self.polyData = self.clipper.GetOutput()
-
-        self.clipMapper = vtkDataSetMapper()
-        self.clipMapper.SetInputData(self.polyData)
-
-        # cyl_mapper = vtkPolyDataMapper()
-        # cyl_mapper.SetInputConnection(cyl.GetOutputPort())
-
-        self.cyl_actor = vtkActor()
-        # self.cyl_actor.SetMapper(cyl_mapper)
-        self.cyl_actor.SetMapper(self.clipMapper)
-        self.cyl_actor.GetProperty().SetColor(1.0, 0.5, 0.5)
-        self.cyl_actor.GetProperty().SetDiffuse(0.5)
-        self.cyl_actor.GetProperty().SetAmbient(0.4)
-        self.cyl_actor.GetProperty().SetRepresentationToWireframe()
-
-        #--------
-        self.box_outline = vtkOutlineSource()
-        bds = [-xmax,xmax, -ymax,ymax, -zmax,zmax]    # {xmin,xmax,ymin,ymax,zmin,zmax} via SetBounds()
-        self.box_outline.SetBounds(bds)
-
-        self.box_mapper = vtkPolyDataMapper()
-        self.box_mapper.SetInputConnection(self.box_outline.GetOutputPort())
-
-        self.box_actor = vtkActor()
-        self.box_actor.SetMapper(self.box_mapper)
-        self.box_actor.GetProperty().SetColor(1.0, 1.0, 1.0)
-
-
 
         #-------------------------------------------
         label_width = 110
@@ -219,14 +126,7 @@ class Vis(QWidget):
         self.substrates_cbox.setEnabled(False)
 
         self.myscroll = QScrollArea()  # might contain centralWidget
-        self.create_figure(False)
-
-        # self.ren.AddActor(self.cyl_actor)
-        # self.ren.AddActor(self.plane_actor)
-        self.show_domain_box = True
-        self.ren.AddActor(self.box_actor)
-        self.ren.AddActor(self.cells_actor)
-
+        self.create_figure()
 
         self.config_params = QWidget()
 
@@ -386,15 +286,6 @@ class Vis(QWidget):
         # self.create_figure()
 
 
-    def toggle_domain_box(self):
-        self.show_domain_box = not self.show_domain_box
-        if self.show_domain_box:
-            # self.ren.AddActor(self.box_actor)
-            self.box_actor.VisibilityOn()
-        else:
-            # self.ren.RemoveActor(self.box_actor)
-            self.box_actor.VisibilityOff()
-
     def reset_plot_range(self):
         try:  # due to the initial callback
             self.my_xmin.setText(str(self.xmin))
@@ -442,8 +333,6 @@ class Vis(QWidget):
         # if self.substrates_checked_flag:
         #     self.plot_substrate(self.current_svg_frame)
         self.plot_cells3D(self.current_svg_frame)
-        # self.plot_cells3D(0)
-
         # if self.cells_checked_flag:
         #     self.plot_svg(self.current_svg_frame)
 
@@ -478,8 +367,6 @@ class Vis(QWidget):
         self.output_dir_w.setText(self.output_dir)
         self.reset_model()
 
-    def reset_model2(self):
-        return
     def reset_model(self):
         print("\n--------- vis_tab: reset_model ----------")
         # Verify initial.xml and at least one .svg file exist. Obtain bounds from initial.xml
@@ -613,33 +500,19 @@ class Vis(QWidget):
         if len(xml_files) == 0:
             return
         xml_files.sort()
-
-        # svg_files = glob.glob('snapshot*.svg')
-        # svg_files.sort()
-        mat_files = glob.glob('output*_cells_physicell.mat')
-        mat_files.sort()
-        # print("mat_files: ",mat_files)
-
-        # print('xml_files = ',xml_files)
+        svg_files = glob.glob('snapshot*.svg')
+        svg_files.sort()
+        print('xml_files = ',xml_files)
         num_xml = len(xml_files)
-
-        # print('svg_files = ',svg_files)
-        # num_svg = len(svg_files)
-        # print('num_xml, num_svg = ',num_xml, num_svg)
-
+        print('svg_files = ',svg_files)
+        num_svg = len(svg_files)
+        print('num_xml, num_svg = ',num_xml, num_svg)
         last_xml = int(xml_files[-1][-12:-4])
-        # last_svg = int(svg_files[-1][-12:-4])
-        last_mat = int(mat_files[-1][6:14])  # output00000012_cells_physicell.mat
-
-        # print('last_xml, _svg = ',last_xml,last_svg)
-        print('last_xml, _mat = ',last_xml,last_mat)
-
+        last_svg = int(svg_files[-1][-12:-4])
+        print('last_xml, _svg = ',last_xml,last_svg)
         self.current_svg_frame = last_xml
-        # if last_svg < last_xml:
-            # self.current_svg_frame = last_svg
-        if last_mat < last_xml:
-            self.current_svg_frame = last_mat
-
+        if last_svg < last_xml:
+            self.current_svg_frame = last_svg
         self.update_plots()
 
     def back_plot_cb(self, text):
@@ -675,11 +548,9 @@ class Vis(QWidget):
             self.current_svg_frame += 1
             # print('svg # ',self.current_svg_frame)
 
-            # fname = "snapshot%08d.svg" % self.current_svg_frame
-            fname = "output%08d.xml" % self.current_svg_frame
-            # full_fname = os.path.join(self.output_dir, fname)
-            full_fname = fname
-            print("play_plot_cb(): full_fname = ",full_fname)
+            fname = "snapshot%08d.svg" % self.current_svg_frame
+            full_fname = os.path.join(self.output_dir, fname)
+            # print("full_fname = ",full_fname)
             # with debug_view:
                 # print("plot_svg:", full_fname) 
             # print("-- plot_svg:", full_fname) 
@@ -746,7 +617,7 @@ class Vis(QWidget):
         self.update_plots()
 
 
-    def create_figure(self, plot_flag):
+    def create_figure(self):
         print("\n--------- create_figure(): ------- creating figure, canvas, ax0")
         self.canvas = QWidget()
         self.vl = QVBoxLayout(self.canvas)
@@ -765,19 +636,19 @@ class Vis(QWidget):
         self.iren = self.vtkWidget.GetRenderWindow().GetInteractor()
 
         # Create source
-        # # # source = vtkSphereSource()
-        # # # source.SetCenter(0, 0, 0)
-        # # # source.SetRadius(5.0)
+        source = vtkSphereSource()
+        source.SetCenter(0, 0, 0)
+        source.SetRadius(5.0)
 
-        # # # # Create a mapper
-        # # # mapper = vtkPolyDataMapper()
-        # # # mapper.SetInputConnection(source.GetOutputPort())
+        # Create a mapper
+        mapper = vtkPolyDataMapper()
+        mapper.SetInputConnection(source.GetOutputPort())
 
-        # # # # Create an actor
-        # # # actor = vtkActor()
-        # # # actor.SetMapper(mapper)
-        # # self.ren.AddActor(actor)
-        # self.ren.ResetCamera()
+        # Create an actor
+        actor = vtkActor()
+        actor.SetMapper(mapper)
+        self.ren.AddActor(actor)
+        self.ren.ResetCamera()
         # self.frame.setLayout(self.vl)
         # self.setCentralWidget(self.frame)
         self.show()
@@ -848,10 +719,7 @@ class Vis(QWidget):
 
         # # self.plot_substrate(self.current_svg_frame)
         # # self.plot_svg(self.current_svg_frame)
-        # self.plot_cells3D(self.current_svg_frame)
-        if plot_flag:
-            # self.plot_cells3D(0)
-            self.plot_cells3D(self.current_svg_frame)
+        self.plot_cells3D(self.current_svg_frame)
         # # self.canvas.draw()
 
     #------------------------------------------------------------
@@ -863,25 +731,20 @@ class Vis(QWidget):
         # xml_file = "output00000000.xml"
         xml_file = "output%08d.xml" % frame
         print("plot_cells3D: xml_file = ",xml_file)
-
-        if not os.path.isfile(xml_file):
-            print("plot_cells3D(): file not found, return. ", xml_file)
+        # mcds = pyMCDS_cells(xml_file, '.')  
+        full_fname = os.path.join('tmpdir', xml_file)
+        if not os.path.isfile(full_fname):
             return
 
-        # self.iren.ReInitialize()
-        # self.iren.GetRenderWindow().Render()
-
-        mcds = pyMCDS_cells(xml_file, '.')  
-        # mcds = pyMCDS_cells(xml_file, 'tmpdir')  
+        mcds = pyMCDS_cells(xml_file, 'tmpdir')  
         print('time=', mcds.get_time())
 
         print(mcds.data['discrete_cells'].keys())
 
         ncells = len(mcds.data['discrete_cells']['ID'])
-        print('total_volume= ',mcds.data['discrete_cells']['total_volume'])
         print('ncells=', ncells)
 
-        # global xyz
+        global xyz
         xyz = np.zeros((ncells, 3))
         xyz[:, 0] = mcds.data['discrete_cells']['position_x']
         xyz[:, 1] = mcds.data['discrete_cells']['position_y']
@@ -890,8 +753,8 @@ class Vis(QWidget):
         # print("position_x = ",xyz[:,0])
         xmin = min(xyz[:,0])
         xmax = max(xyz[:,0])
-        print("xmin = ",xmin)
-        print("xmax = ",xmax)
+        # print("xmin = ",xmin)
+        # print("xmax = ",xmax)
 
         ymin = min(xyz[:,1])
         ymax = max(xyz[:,1])
@@ -903,108 +766,92 @@ class Vis(QWidget):
         print("zmin = ",zmin)
         print("zmax = ",zmax)
 
-        # cell_type = mcds.data['discrete_cells']['cell_type']
-        # cell_custom_ID = mcds.data['discrete_cells']['cell_ID']
-        # # print(type(cell_type))
-        # # print(cell_type)
-        # unique_cell_type = np.unique(cell_type)
-        # unique_cell_custom_ID = np.unique(cell_custom_ID)
-        # print("\nunique_cell_type = ",unique_cell_type )
-        # print("\nunique_cell_custom_ID = ",unique_cell_custom_ID )
+        cell_type = mcds.data['discrete_cells']['cell_type']
+        # print(type(cell_type))
+        # print(cell_type)
+        unique_cell_type = np.unique(cell_type)
+        print("\nunique_cell_type = ",unique_cell_type )
 
         #------------
         # colors = vtkNamedColors()
 
-        self.points.Reset()
-        self.cellID.Reset()
-        self.cellVolume.Reset()
+        points = vtkPoints()
+        # points.InsertNextPoint(0, 0, 0)
+        # points.InsertNextPoint(1, 1, 1)
+        # points.InsertNextPoint(2, 2, 2)
+        cellID = vtkFloatArray()
+        cellVolume = vtkFloatArray()
         for idx in range(ncells):
             x= mcds.data['discrete_cells']['position_x'][idx]
             y= mcds.data['discrete_cells']['position_y'][idx]
             z= mcds.data['discrete_cells']['position_z'][idx]
-            # id = mcds.data['discrete_cells']['cell_type'][idx]
-            # id = mcds.data['discrete_cells']['cell_ID'][idx]
-            self.points.InsertNextPoint(x, y, z)
-            self.cellVolume.InsertNextValue(2.2)  # actually want radius?
-            # self.cellID.InsertNextValue(id)
+            id = mcds.data['discrete_cells']['cell_type'][idx]
+            points.InsertNextPoint(x, y, z)
+            # cellVolume.InsertNextValue(30.0)
+            cellID.InsertNextValue(id)
 
-        # print("min (parent)cell_ID = ",min(mcds.data['discrete_cells']['cell_ID']))
-        # print("max (parent)cell_ID = ",max(mcds.data['discrete_cells']['cell_ID']))
-        # cell_flavor = mcds.data['discrete_cells']['cell_ID']
-        # unique_cell_flavor = np.unique(cell_flavor)
-        # print("\nunique_cell_flavor = ",unique_cell_flavor )
-
-        # self.polydata = vtkPolyData()
-        self.polydata.SetPoints(self.points)
-        self.polydata.GetPointData().SetScalars(self.cellVolume)
-        # self.polydata.GetPointData().SetScalars(self.cellID)
+        polydata = vtkPolyData()
+        polydata.SetPoints(points)
+        # polydata.GetPointData().SetScalars(cellVolume)
+        polydata.GetPointData().SetScalars(cellID)
 
         cellID_color_dict = {}
         # for idx in range(ncells):
         random.seed(42)
-        # for utype in unique_cell_type:
-        # for utype in unique_cell_custom_ID:
-        #     # colors.InsertTuple3(0, randint(0,255), randint(0,255), randint(0,255)) # reddish
-        #     cellID_color_dict[utype] = [random.randint(0,255), random.randint(0,255), random.randint(0,255)]
-        # cellID_color_dict[0.0]=[255,255,0]  # yellow basement membrane
-        # cellID_color_dict[1.]=[255,255,0]  # yellow basement membrane
-        cellID_color_dict[0.]=[255,255,0]  # yellow basement membrane
+        for utype in unique_cell_type:
+            # colors.InsertTuple3(0, randint(0,255), randint(0,255), randint(0,255)) # reddish
+            cellID_color_dict[utype] = [random.randint(0,255), random.randint(0,255), random.randint(0,255)]
+        cellID_color_dict[0.0]=[255,255,0]  # yellow basement membrane
         print("color dict=",cellID_color_dict)
 
-        # self.colors = vtkUnsignedCharArray()
-        # self.colors.Reset()
-        # self.colors.SetNumberOfComponents(3)
-        # self.colors.SetNumberOfTuples(self.polydata.GetNumberOfPoints())  # ncells
-
-        # for idx in range(ncells):
+        colors = vtkUnsignedCharArray()
+        colors.SetNumberOfComponents(3)
+        colors.SetNumberOfTuples(polydata.GetNumberOfPoints())  # ncells
+        for idx in range(ncells):
         # for idx in range(len(unique_cell_type)):
             # colors.InsertTuple3(idx, randint(0,255), randint(0,255), randint(0,255)) 
             # if idx < 5:
                 # print(idx,cellID_color_dict[cell_type[idx]])
-            # self.colors.InsertTuple3(idx, cellID_color_dict[cell_type[idx]][0], cellID_color_dict[cell_type[idx]][1], cellID_color_dict[cell_type[idx]][2])
+            colors.InsertTuple3(idx, cellID_color_dict[cell_type[idx]][0], cellID_color_dict[cell_type[idx]][1], cellID_color_dict[cell_type[idx]][2])
 
-            # self.colors.InsertTuple3(idx, cellID_color_dict[cell_custom_ID[idx]][0], cellID_color_dict[cell_custom_ID[idx]][1], cellID_color_dict[cell_custom_ID[idx]][2])
+        polydata.GetPointData().SetScalars(colors)
 
-        # self.polydata.GetPointData().SetScalars(self.colors)
+        sphereSource = vtkSphereSource()
+        nres = 20
+        sphereSource.SetPhiResolution(nres)
+        sphereSource.SetThetaResolution(nres)
+        sphereSource.SetRadius(0.1)
 
-        # self.sphereSource = vtkSphereSource()
-        # nres = 20
-        # self.sphereSource.SetPhiResolution(nres)
-        # self.sphereSource.SetThetaResolution(nres)
-        # self.sphereSource.SetRadius(20.0)
-
-        # self.glyph = vtkGlyph3D()
-        self.glyph.SetSourceConnection(self.sphereSource.GetOutputPort())
-        self.glyph.SetInputData(self.polydata)
-        # self.glyph.SetColorModeToColorByScalar()
-        self.glyph.SetScaleModeToScaleByScalar()
+        glyph = vtkGlyph3D()
+        glyph.SetSourceConnection(sphereSource.GetOutputPort())
+        glyph.SetInputData(polydata)
+        glyph.SetColorModeToColorByScalar()
+        # glyph.SetScaleModeToScaleByScalar()
 
         # using these 2 results in fixed size spheres
-        # self.glyph.SetScaleModeToDataScalingOff()  # results in super tiny spheres without 'ScaleFactor'
-        # self.glyph.SetScaleFactor(170)  # overall (multiplicative) scaling factor
+        glyph.SetScaleModeToDataScalingOff()  # results in super tiny spheres without 'ScaleFactor'
+        glyph.SetScaleFactor(170)  # overall (multiplicative) scaling factor
 
         # glyph.SetScaleModeToDataScalingOn()
         # glyph.ScalingOn()
-        self.glyph.Update()
+        glyph.Update()
+
 
         # Visualize
-        # self.cells_mapper = vtkPolyDataMapper()
-        # self.cells_mapper.SetInputConnection(self.glyph.GetOutputPort())
-        self.cells_mapper.Update()
+        mapper = vtkPolyDataMapper()
+        mapper.SetInputConnection(glyph.GetOutputPort())
 
-        # self.cells_actor = vtkActor()
-        # self.cells_actor.SetMapper(self.cells_mapper)
-
+        actor = vtkActor()
+        actor.SetMapper(mapper)
         # actor.GetProperty().SetInterpolationToPBR()
         # actor.GetProperty().SetColor(colors.GetColor3d('Salmon'))
-        # print("-- actor defaults:")
-        # print("-- diffuse:",self.actor.GetProperty().GetDiffuse())  # 1.0
-        # print("-- specular:",self.actor.GetProperty().GetSpecular())  # 0.0
-        # print("-- roughness:",self.actor.GetProperty().GetCoatRoughness ())  # 0.0
-        # self.ren.AddActor(self.cyl_actor)
-        # self.cells_actor.GetProperty().SetAmbient(0.3)
-        # self.cells_actor.GetProperty().SetDiffuse(0.5)
-        # self.cells_actor.GetProperty().SetSpecular(0.2)
+        print("-- actor defaults:")
+        print("-- diffuse:",actor.GetProperty().GetDiffuse())  # 1.0
+        print("-- specular:",actor.GetProperty().GetSpecular())  # 0.0
+        print("-- roughness:",actor.GetProperty().GetCoatRoughness ())  # 0.0
+        actor.GetProperty().SetAmbient(0.3)
+        actor.GetProperty().SetDiffuse(0.5)
+        actor.GetProperty().SetSpecular(0.2)
         # actor.GetProperty().SetCoatRoughness (0.5)
         # actor.GetProperty().SetCoatRoughness (0.2)
         # actor.GetProperty().SetCoatRoughness (1.0)
@@ -1021,16 +868,10 @@ class Vis(QWidget):
         # renderWindowInteractor.SetRenderWindow(renderWindow)
 
         # renderer.AddActor(actor)
-        #------------------------------------------
+        self.ren.AddActor(actor)
         # renderer.SetBackground(colors.GetColor3d('SlateGray'))  # Background Slate Gray
-
-        # self.iren.ReInitialize()
-        self.iren.GetRenderWindow().Render()
 
     # renderWindow.SetWindowName('PhysiCell model')
     # renderWindow.Render()
     # renderWindowInteractor.Start()
-        self.ren.GetActiveCamera().ParallelProjectionOn()
-        # self.ren.ResetCamera()
-
         return
