@@ -70,13 +70,17 @@ class Vis(QWidget):
 
         # self.config_file = "mymodel.xml"
         self.reset_model_flag = True
-        self.xmin = -80
-        self.xmax = 80
+        self.xmin = 0
+        self.xmax = 980
         self.x_range = self.xmax - self.xmin
 
-        self.ymin = -50
-        self.ymax = 100
+        self.ymin = 0
+        self.ymax = 660
         self.y_range = self.ymax - self.ymin
+
+        self.zmin = 0
+        self.zmax = 300
+        self.z_range = self.zmax - self.zmin
 
         self.aspect_ratio = 0.7
 
@@ -196,7 +200,7 @@ class Vis(QWidget):
 
         #--------
         self.box_outline = vtkOutlineSource()
-        bds = [-xmax,xmax, -ymax,ymax, -zmax,zmax]    # {xmin,xmax,ymin,ymax,zmin,zmax} via SetBounds()
+        bds = [self.xmin,self.xmax, self.ymin,self.ymax, self.zmin,self.zmax]    
         self.box_outline.SetBounds(bds)
 
         self.box_mapper = vtkPolyDataMapper()
@@ -951,10 +955,10 @@ class Vis(QWidget):
         cellID_color_dict[0.]=[255,255,0]  # yellow basement membrane
         print("color dict=",cellID_color_dict)
 
-        # self.colors = vtkUnsignedCharArray()
-        # self.colors.Reset()
-        # self.colors.SetNumberOfComponents(3)
-        # self.colors.SetNumberOfTuples(self.polydata.GetNumberOfPoints())  # ncells
+        self.colors = vtkUnsignedCharArray()
+        self.colors.Reset()
+        self.colors.SetNumberOfComponents(3)
+        self.colors.SetNumberOfTuples(self.polydata.GetNumberOfPoints())  # ncells
 
         # for idx in range(ncells):
         # for idx in range(len(unique_cell_type)):
@@ -976,7 +980,7 @@ class Vis(QWidget):
         # self.glyph = vtkGlyph3D()
         self.glyph.SetSourceConnection(self.sphereSource.GetOutputPort())
         self.glyph.SetInputData(self.polydata)
-        # self.glyph.SetColorModeToColorByScalar()
+        self.glyph.SetColorModeToColorByScalar()
         self.glyph.SetScaleModeToScaleByScalar()
 
         # using these 2 results in fixed size spheres
